@@ -1,4 +1,4 @@
-name: Import verified desktop installers
+name: Prepare installer release
 on:
   push:
     branches: [main]
@@ -7,10 +7,10 @@ on:
 permissions:
   contents: write
 jobs:
-  import:
+  prepare:
     runs-on: ubuntu-latest
     steps:
-      - name: Copy verified v0.1.4 release assets
+      - name: Prepare draft for direct installer uploads
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -18,32 +18,19 @@ jobs:
         run: |
           set -euo pipefail
           if gh release view v0.1.4 --repo "$REPO" >/dev/null 2>&1; then
-            echo 'Existing immutable release retained.'
+            echo 'Existing release retained.'
             exit 0
           fi
-          mkdir files
-          curl --fail --location --retry 3 'https://github.com/merryoumin/neck-turtle/releases/download/v0.1.4/NeckTurtle-0.1.4-mac-universal.dmg' -o 'files/NeckTurtle-0.1.4-mac-universal.dmg'
-          curl --fail --location --retry 3 'https://github.com/merryoumin/neck-turtle/releases/download/v0.1.4/NeckTurtle-0.1.4-mac-universal.zip' -o 'files/NeckTurtle-0.1.4-mac-universal.zip'
-          curl --fail --location --retry 3 'https://github.com/merryoumin/neck-turtle/releases/download/v0.1.4/NeckTurtle-Setup-0.1.4-x64.exe' -o 'files/NeckTurtle-Setup-0.1.4-x64.exe'
-          curl --fail --location --retry 3 'https://github.com/merryoumin/neck-turtle/releases/download/v0.1.4/SHA256SUMS.txt' -o 'files/SHA256SUMS.txt'
-          cat > expected.txt <<'CHECKSUMS'
-          eb5cc14cac38092aef9dc0ae777b6ce24e9af60ca1d08b2ef2749371e965d2f2  NeckTurtle-0.1.4-mac-universal.dmg
-          6aa84f40de633d11491fe8fafd5d2bfb4fc85215bbf9e633f6a53e9d371d87a7  NeckTurtle-0.1.4-mac-universal.zip
-          8611fa86f72ca5bfe87f1ed1b818c700ec4fd3b8f01e9c2391595d8d7d67c3e7  NeckTurtle-Setup-0.1.4-x64.exe
-          fca2a899f793f7aa14e67f44c6c45ee8e7d690b3e2b61de36c856b498f966244  SHA256SUMS.txt
-          CHECKSUMS
-          (cd files && sha256sum --check ../expected.txt)
           cat > notes.md <<'NOTES'
           당신 목 빠지는 거북이 v0.1.4 — 개발 테스트 버전
           
-          공식 설치 파일 전용 배포 저장소입니다. 프로그램 원본 소스는 포함하지 않습니다.
-          개인 설치·실행은 허용합니다. 사전 서면 허락 없는 무단 재배포·변형·판매 및 상업적 유포를 금합니다. 법령상 예외 및 제3자 라이선스는 유지됩니다.
-          
+          공식 설치 파일 전용 배포 저장소입니다. 앱 원본 소스를 포함하지 않습니다.
           Windows x64 EXE / macOS 13 이상 Apple Silicon·Intel 공용 DMG·ZIP.
-          Apple 개발자 서명·공증 전 Mac 테스트 파일이며 보안 경고가 남을 수 있습니다.
-          원래 검사된 v0.1.4 파일과 SHA-256이 동일함을 검증한 복사본입니다.
+          Mac은 Apple 공증 전 개발 테스트 버전입니다.
+          
+          사전 서면 허락 없는 무단 재배포·변형·판매 및 상업적 유포를 금합니다.
+          개인 설치·실행, 법령상 예외 및 제3자 라이선스는 유지됩니다.
+          
+          관리자는 원본 v0.1.4의 EXE, DMG, ZIP, SHA256SUMS.txt 파일을 업로드한 뒤 공개해 주세요.
           NOTES
-          gh release create v0.1.4 files/* --repo "$REPO" --prerelease --title '당신 목 빠지는 거북이 v0.1.4' --notes-file notes.md
-          for name in NeckTurtle-Setup-0.1.4-x64.exe NeckTurtle-0.1.4-mac-universal.dmg NeckTurtle-0.1.4-mac-universal.zip SHA256SUMS.txt; do
-            curl --fail --location --head --retry 3 "https://github.com/$REPO/releases/download/v0.1.4/$name" >/dev/null
-          done
+          gh release create v0.1.4 --repo "$REPO" --target main --draft --prerelease --title '당신 목 빠지는 거북이 v0.1.4' --notes-file notes.md
